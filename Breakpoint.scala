@@ -82,7 +82,8 @@ object Breakpoint {
     result
   }
 
-  def main(args: Array[String]) {
+
+  def main(args: Array[String]): Unit = {
     val spanSchema = StructType(
       Array(
         StructField("ref_name", StringType, true),
