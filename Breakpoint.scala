@@ -58,9 +58,9 @@ object CalcBreakPoints extends Aggregator[Span, Coverage, Array[Int]] {
   }
 
   def finish(cov: Coverage): Array[Int] = {
-    val cov_cutoff = 100;
+    val cov_cutoff = 5;
     val bp = cov
-      .filter(i => (i.cov >= cov_cutoff && i.nextCov < cov_cutoff) || (i.cov <= cov_cutoff && i.nextCov > cov_cutoff))
+      .filter(i => (i.cov >= cov_cutoff && i.nextCov < cov_cutoff) || (i.cov < cov_cutoff && i.nextCov >= cov_cutoff))
       .map(_.loc)
     bp
   }
