@@ -1,11 +1,11 @@
+package org.sparklingbreakpoint
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.Encoder
 import org.apache.spark.sql.expressions.Aggregator
 
-import coverage.PCT
-import coverage.Coverage._
 
 case class Span(
   ref_name: String,
@@ -15,7 +15,21 @@ case class Span(
   read_count: Int
 )
 
-object CalcBreakPoints extends Aggregator[Span, Coverage, Array[Int]] {
+// PCT: PointCoverageTransition
+case class PCT(
+  loc: Int,
+  cov: Int,
+  nextCov: Int
+)
+
+object BreakPointCalculator extends Aggregator[Span, Array[PCT], Array[Int]] {
+  // Coverage is overloaded both as
+  // 1. a data type and
+  // 2. a function that constructs a value of Coverage type
+  type Coverage = Array[PCT]
+
+  def Coverage(xs: PCT*) = Array(xs: _*)
+
   def mergeCoverages(cov1: Coverage, cov2: Coverage): Coverage = {
     if (cov1.length == 0) {
       cov2
@@ -110,7 +124,7 @@ object Breakpoint {
 
     val lineCount = ds.count
     println(s"# lines in $spanFile: $lineCount")
-    val cbp = CalcBreakPoints.toColumn.name("bp_array")
+    val cbp = BreakPointCalculator.toColumn.name("bp_array")
     val res = ds.groupByKey(a => a.ref_name).agg(cbp)
     val colNames = Seq("ref_name", "break_point")
     val out = res.filter(_._2.length > 0).flatMap(i => i._2.map(j => (i._1, j))).toDF(colNames: _*)
