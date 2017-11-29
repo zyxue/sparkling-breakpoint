@@ -36,9 +36,34 @@ object BreakPointCalculator extends Aggregator[Span, Array[PCT], Array[Int]] {
     } else if (cov2.length == 0) {
       cov1
     } else {
-      val cc = (cov1 ++ cov2).sortBy(_.loc)
+      var i = 0
+      var j = 0
+      var len1 = cov1.length
+      var len2 = cov2.length
       var newCov = Coverage()
-      for (pct <- cc) {
+      while (i < len1 || j < len2) {
+        // TO refactor, determine the next PCT to process
+        var pct = PCT(0, 0, 0)
+        if (i < len1 && j < len2) {
+          var pcti = cov1(i)
+          var pctj = cov2(j)
+
+          if (pctj.loc >= pcti.loc) {
+            pct = pcti
+            i += 1
+          } else {
+            pct = pctj
+            j += 1
+          }
+        } else if (i < len1) {
+          pct = cov1(i)
+          i += 1
+        } else {
+          pct = cov2(j)
+          j += 1
+        }
+
+        // integrate the pct into newCov
         if (newCov.length == 0) {
           newCov :+= pct
         } else {
