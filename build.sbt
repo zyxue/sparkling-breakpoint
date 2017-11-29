@@ -9,6 +9,9 @@ lazy val root = (project in file(".")).
     )),
     // name determines the name of packaged jar
     name := "SparklingBreakpoint",
+    // either all with quotes, or none has quotes
     libraryDependencies += scalaTest % Test,
+    libraryDependencies += "junit" % "junit" % "4.10" % "test",
     libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.2.0"
+
   )
