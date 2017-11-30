@@ -6,6 +6,8 @@ import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.Encoder
 import org.apache.spark.sql.expressions.Aggregator
 
+// import org.apache.spark.SparkContext
+// import org.apache.spark.SparkConf
 
 case class Extent(
   Rname: String,
@@ -27,7 +29,7 @@ case class PCT(
   nextCov: Int
 )
 
-object BreakPointCalculator extends Aggregator[Extent, Array[PCT], Array[Int]] {
+class BreakPointCalculator(depthCutoff: Int) extends Aggregator[Extent, Array[PCT], Array[Int]] {
   // Coverage is overloaded both as
   // 1. a data type and
   // 2. a function that constructs a value of Coverage type
@@ -102,9 +104,8 @@ object BreakPointCalculator extends Aggregator[Extent, Array[PCT], Array[Int]] {
   }
 
   def finish(cov: Coverage): Array[Int] = {
-    val cov_cutoff = 5;
     val bp = cov
-      .filter(i => (i.cov >= cov_cutoff && i.nextCov < cov_cutoff) || (i.cov < cov_cutoff && i.nextCov >= cov_cutoff))
+      .filter(i => (i.cov >= depthCutoff && i.nextCov < depthCutoff) || (i.cov < depthCutoff && i.nextCov >= depthCutoff))
       .map(_.loc)
     bp
   }
@@ -143,8 +144,12 @@ object Breakpoint {
       )
     )
 
+    // val conf = new SparkConf().setAppName("lele").setMaster("local[*]")
+    // val sc = new SparkContext(conf)
+
     val extentFile = args(0)
     val output = args(1)
+    val depthCutoff = args(2).toInt
 
     val spark = SparkSession.builder
       .appName(s"Sparkle breakpoints for $extentFile")
@@ -164,7 +169,7 @@ object Breakpoint {
 
     // val lineCount = ds.count
     // println(s"# lines in $extentFile: $lineCount")
-    val cbp = BreakPointCalculator.toColumn.name("bp_array")
+    val cbp = new BreakPointCalculator(depthCutoff).toColumn.name("bp_array")
     val res = ds.groupByKey(i => i.Rname).agg(cbp)
     val colNames = Seq("Rname", "break_point")
     val out = res.filter(_._2.length > 0).flatMap(i => i._2.map(j => (i._1, j))).toDF(colNames: _*)
