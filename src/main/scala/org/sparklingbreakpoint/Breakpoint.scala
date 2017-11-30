@@ -43,34 +43,9 @@ class BreakpointCalculator(depthCutoff: Int) extends Aggregator[Extent, Array[PC
     } else if (cov2.length == 0) {
       cov1
     } else {
-      var i = 0
-      var j = 0
-      var len1 = cov1.length
-      var len2 = cov2.length
+      val cc = (cov1 ++ cov2).sortBy(_.loc)
       var newCov = Coverage()
-      while (i < len1 || j < len2) {
-        // TO refactor, determine the next PCT to process
-        var pct = PCT(0, 0, 0)
-        if (i < len1 && j < len2) {
-          var pcti = cov1(i)
-          var pctj = cov2(j)
-
-          if (pctj.loc >= pcti.loc) {
-            pct = pcti
-            i += 1
-          } else {
-            pct = pctj
-            j += 1
-          }
-        } else if (i < len1) {
-          pct = cov1(i)
-          i += 1
-        } else {
-          pct = cov2(j)
-          j += 1
-        }
-
-        // integrate the pct into newCov
+      for (pct <- cc) {
         if (newCov.length == 0) {
           newCov :+= pct
         } else {
@@ -91,6 +66,61 @@ class BreakpointCalculator(depthCutoff: Int) extends Aggregator[Extent, Array[PC
       newCov
     }
   }
+
+  // def mergeCoverages(cov1: Coverage, cov2: Coverage): Coverage = {
+  //   if (cov1.length == 0) {
+  //     cov2
+  //   } else if (cov2.length == 0) {
+  //     cov1
+  //   } else {
+  //     var i = 0
+  //     var j = 0
+  //     var len1 = cov1.length
+  //     var len2 = cov2.length
+  //     var newCov = Coverage()
+  //     while (i < len1 || j < len2) {
+  //       // TO refactor, determine the next PCT to process
+  //       var pct = PCT(0, 0, 0)
+  //       if (i < len1 && j < len2) {
+  //         var pcti = cov1(i)
+  //         var pctj = cov2(j)
+
+  //         if (pctj.loc >= pcti.loc) {
+  //           pct = pcti
+  //           i += 1
+  //         } else {
+  //           pct = pctj
+  //           j += 1
+  //         }
+  //       } else if (i < len1) {
+  //         pct = cov1(i)
+  //         i += 1
+  //       } else {
+  //         pct = cov2(j)
+  //         j += 1
+  //       }
+
+  //       // integrate the pct into newCov
+  //       if (newCov.length == 0) {
+  //         newCov :+= pct
+  //       } else {
+  //         var ti = newCov.length - 1 // tail index
+  //         var tailPCT = newCov(ti)
+
+  //         if (pct.loc == tailPCT.loc) {
+  //           newCov(ti) = PCT(pct.loc,
+  //                            tailPCT.cov,
+  //                            tailPCT.nextCov + pct.nextCov - pct.cov)
+  //         } else {
+  //           newCov :+= PCT(pct.loc,
+  //                          tailPCT.nextCov,
+  //                          tailPCT.nextCov + pct.nextCov - pct.cov)
+  //         }
+  //       }
+  //     }
+  //     newCov
+  //   }
+  // }
 
   def zero: Coverage = Coverage()
 
