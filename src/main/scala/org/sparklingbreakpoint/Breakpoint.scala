@@ -29,7 +29,7 @@ case class PCT(
   nextCov: Int
 )
 
-class BreakPointCalculator(depthCutoff: Int) extends Aggregator[Extent, Array[PCT], Array[Int]] {
+class BreakpointCalculator(depthCutoff: Int) extends Aggregator[Extent, Array[PCT], Array[Int]] {
   // Coverage is overloaded both as
   // 1. a data type and
   // 2. a function that constructs a value of Coverage type
@@ -170,7 +170,7 @@ object Breakpoint {
 
     // val lineCount = ds.count
     // println(s"# lines in $extentFile: $lineCount")
-    val cbp = new BreakPointCalculator(depthCutoff).toColumn.name("bp_array")
+    val cbp = new BreakpointCalculator(depthCutoff).toColumn.name("bp_array")
     val res = ds.groupByKey(i => i.Rname).agg(cbp)
     val colNames = Seq("Rname", "break_point")
     val out = res.filter(_._2.length > 0).flatMap(i => i._2.map(j => (i._1, j))).toDF(colNames: _*)
