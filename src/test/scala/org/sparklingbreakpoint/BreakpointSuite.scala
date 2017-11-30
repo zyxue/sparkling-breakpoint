@@ -11,7 +11,7 @@ class BreakpointSuite extends FunSuite {
   def checkCovSum(cov1: Array[PCT], cov2: Array[PCT], expected: Array[PCT]): Unit = {
     val depthCutoff = 5
     val cc = new BreakpointCalculator(depthCutoff)
-    assert(cc.mergeCoverages(cov1, cov2) === expected)
+    assert(cc.consolidateCoverage(cov1 ++ cov2) === expected)
   }
 
   test("sum identical coverages") {
