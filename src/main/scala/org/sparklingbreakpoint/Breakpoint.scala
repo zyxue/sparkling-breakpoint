@@ -7,12 +7,17 @@ import org.apache.spark.sql.Encoder
 import org.apache.spark.sql.expressions.Aggregator
 
 
-case class Span(
-  ref_name: String,
-  bc: String,
-  beg: Int,
-  end: Int,
-  read_count: Int
+case class Extent(
+  Rname: String,
+  Start: Int,
+  End: Int,
+  Size: Int,
+  BX: String,
+  MI: Int,
+  Reads: Int,
+  Mapq_median: Float,
+  AS_median: Float,
+  NM_median: Float
 )
 
 // PCT: PointCoverageTransition
@@ -22,7 +27,7 @@ case class PCT(
   nextCov: Int
 )
 
-object BreakPointCalculator extends Aggregator[Span, Array[PCT], Array[Int]] {
+object BreakPointCalculator extends Aggregator[Extent, Array[PCT], Array[Int]] {
   // Coverage is overloaded both as
   // 1. a data type and
   // 2. a function that constructs a value of Coverage type
@@ -87,8 +92,8 @@ object BreakPointCalculator extends Aggregator[Span, Array[PCT], Array[Int]] {
 
   def zero: Coverage = Coverage()
 
-  def reduce(buffer: Coverage, span: Span): Coverage = {
-    val cov = Coverage(PCT(span.beg - 1, 0, 1), PCT(span.end, 1, 0))
+  def reduce(buffer: Coverage, extent: Extent): Coverage = {
+    val cov = Coverage(PCT(extent.Start - 1, 0, 1), PCT(extent.End, 1, 0))
     mergeCoverages(buffer, cov)
   }
 
@@ -123,40 +128,49 @@ object Breakpoint {
 
 
   def main(args: Array[String]): Unit = {
-    val spanSchema = StructType(
+    val extentSchema = StructType(
       Array(
-        StructField("ref_name", StringType, true),
-        StructField("bc", StringType, true),
-        StructField("beg", IntegerType, true),
-        StructField("end", IntegerType, true),
-        StructField("read_count", IntegerType, true)
+        StructField("Rname", StringType, true),
+        StructField("Start", IntegerType, true),
+        StructField("End", IntegerType, true),
+        StructField("Size", IntegerType, true),
+        StructField("BX", StringType, true),
+        StructField("MI", IntegerType, true),
+        StructField("Reads", IntegerType, true),
+        StructField("Mapq_median", FloatType, true),
+        StructField("AS_median", FloatType, true),
+        StructField("NM_median", FloatType, true)
       )
     )
 
-    val spanFile = args(0)
+    val extentFile = args(0)
     val output = args(1)
 
     val spark = SparkSession.builder
-      .appName(s"Sparkle breakpoints for $spanFile")
+      .appName(s"Sparkle breakpoints for $extentFile")
       .master("local[*]")
       .enableHiveSupport()
       // .config("spark.sql.warehouse.dir", "target/spark-warehouse")
       .getOrCreate()
     import spark.implicits._
+    // val ds = spark.read.schema(extentSchema).csv(extentFile).as[Extent]
 
-    // val ds = spark.read.option("sep", "\t").schema(spanSchema).csv(spanFile).as[Span]
-    val ds = spark.read.schema(spanSchema).csv(spanFile).as[Span]
+    val ds = spark.read
+      .option("sep", "\t")
+      .option("header", true)
+      .schema(extentSchema)
+      .csv(extentFile)
+      .as[Extent]
 
-    val lineCount = ds.count
-    println(s"# lines in $spanFile: $lineCount")
+    // val lineCount = ds.count
+    // println(s"# lines in $extentFile: $lineCount")
     val cbp = BreakPointCalculator.toColumn.name("bp_array")
-    val res = ds.groupByKey(a => a.ref_name).agg(cbp)
-    val colNames = Seq("ref_name", "break_point")
+    val res = ds.groupByKey(i => i.Rname).agg(cbp)
+    val colNames = Seq("Rname", "break_point")
     val out = res.filter(_._2.length > 0).flatMap(i => i._2.map(j => (i._1, j))).toDF(colNames: _*)
 
     time {out.write.format("parquet").mode("overwrite").save(output)}
 
     spark.stop()
-  
   }
 }
