@@ -175,7 +175,7 @@ object Breakpoint {
     val colNames = Seq("Rname", "break_point")
     val out = res.filter(_._2.length > 0).flatMap(i => i._2.map(j => (i._1, j))).toDF(colNames: _*)
 
-    time {out.write.format("parquet").mode("overwrite").save(output)}
+    time {out.write.format("parquet").save(output)}
 
     spark.stop()
   }
