@@ -107,7 +107,8 @@ class BreakPointCalculator(depthCutoff: Int) extends Aggregator[Extent, Array[PC
     val bp = cov
       .filter(i => (i.cov >= depthCutoff && i.nextCov < depthCutoff) || (i.cov < depthCutoff && i.nextCov >= depthCutoff))
       .map(_.loc)
-    bp
+    val len = bp.length
+    bp.slice(1, len - 1) // removing beginning and ending breakpoints
   }
 
   // Specifies the Encoder for the intermediate value type
