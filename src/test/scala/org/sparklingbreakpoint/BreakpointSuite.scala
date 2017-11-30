@@ -9,21 +9,25 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class BreakpointSuite extends FunSuite {
   def checkCovSum(cov1: Array[PCT], cov2: Array[PCT], expected: Array[PCT]): Unit = {
-    assert(BreakPointCalculator.mergeCoverages(cov1, cov2) === expected)
+    val depthCutoff = 5
+    val cc = new BreakpointCalculator(depthCutoff)
+    assert(cc.mergeCoverages(cov1, cov2) === expected)
   }
 
   test("sum identical coverages") {
-    val cov1 = Array(PCT(-1, 0, 10), PCT(10, 10, 0))
-    val cov2 = Array(PCT(-1, 0, 10), PCT(10, 10, 0))
-    val res = BreakPointCalculator.mergeCoverages(cov1, cov2)
-    assert(res === Array(PCT(-1,0,20), PCT(10,20,0)))
+    checkCovSum(
+      Array(PCT(-1, 0, 10), PCT(10, 10, 0)),
+      Array(PCT(-1, 0, 10), PCT(10, 10, 0)),
+      Array(PCT(-1,0,20), PCT(10,20,0))
+    )
   }
 
   test("sum coverages with equivalent ranges but not the same depth") {
-    val cov1 = Array(PCT(-1, 0, 10), PCT(10, 10, 0))
-    val cov2 = Array(PCT(-1, 0, 5), PCT(10, 5, 0))
-    val res = BreakPointCalculator.mergeCoverages(cov1, cov2)
-    assert(res === Array(PCT(-1, 0, 15), PCT(10, 15, 0)))
+    checkCovSum(
+      Array(PCT(-1, 0, 10), PCT(10, 10, 0)),
+      Array(PCT(-1, 0, 5), PCT(10, 5, 0)),
+      Array(PCT(-1, 0, 15), PCT(10, 15, 0))
+    )
   }
 
   test("sum coverages not the same range") {
