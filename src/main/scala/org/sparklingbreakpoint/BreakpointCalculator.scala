@@ -13,7 +13,7 @@ case class PCT(
 )
 
 
-class BreakpointCalculator(depthCutoff: Int) extends Aggregator[ThinExtent, Array[PCT], Array[Int]] {
+class BreakpointCalculator(depthCutoff:Int=50, maxMolExtent:Int = 50000) extends Aggregator[ThinExtent, Array[PCT], Array[Int]] {
   def consolidateCoverage(cov: Array[PCT]): Array[PCT] = {
     val cc = cov.sortBy(_.loc)
     var newCov = Array[PCT]()
@@ -53,9 +53,19 @@ class BreakpointCalculator(depthCutoff: Int) extends Aggregator[ThinExtent, Arra
     val csCov = consolidateCoverage(cov)
     val bp = csCov
       .filter(i => (i.cov >= depthCutoff && i.nextCov < depthCutoff) || (i.cov < depthCutoff && i.nextCov >= depthCutoff))
-      .map(_.loc)
     val len = bp.length
-    bp.slice(1, len - 1) // removing beginning and ending breakpoints
+
+    // removing beginning and ending breakpoints
+    val bp2 = bp.slice(1, len - 1)
+
+    // remove pair breakpoints that are less than maxMolExtent away
+    val bpi = bp2.zipWithIndex
+    val bpOdd:Array[PCT] = bpi.filter(_._2 % 2 == 0).map(_._1) // 0-based: so it's actually Odd element
+    val bpEven:Array[PCT] = bpi.filter(_._2 % 2 == 1).map(_._1)
+    val bpz = bpOdd.zip(bpEven)
+      .filter(i => (i._2.loc - i._1.loc < maxMolExtent))
+      .flatMap(pcts => Array(pcts._1, pcts._2))
+    bpz.map(_.loc)
   }
 
   // Specifies the Encoder for the intermediate value type

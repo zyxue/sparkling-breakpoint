@@ -64,6 +64,7 @@ object Breakpoint {
     val output = args(1)
     val depthCutoff = args(2).toInt
     val molSizeCutoff = args(3).toInt
+    val maxMolExtent = args(4).toInt
 
     val spark = SparkSession.builder
       .appName("Sparkling-breakpoints")
@@ -88,7 +89,7 @@ object Breakpoint {
 
     // val lineCount = ds.count
     // println(s"# lines in $extentFile: $lineCount")
-    val cbp = new BreakpointCalculator(depthCutoff).toColumn.name("BreakpointArray")
+    val cbp = new BreakpointCalculator(depthCutoff, maxMolExtent).toColumn.name("BreakpointArray")
     val res = odf_extent.groupByKey(i => i.Rname).agg(cbp)
     val colNames = Seq("Rname", "breakpoint")
     val out = res.filter(_._2.length > 0).flatMap(i => i._2.map(j => (i._1, j))).toDF(colNames: _*)
