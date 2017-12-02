@@ -41,7 +41,7 @@ class BreakpointCalculator(depthCutoff: Int) extends Aggregator[ThinExtent, Arra
   def zero: Array[PCT] = Array[PCT]()
 
   def reduce(buffer: Array[PCT], extent: ThinExtent): Array[PCT] = {
-    val cov = Array(PCT(extent.Start - 1, 0, 1), PCT(extent.End, 1, 0))
+    val cov = Array(PCT(extent.Start - 1, 0, 1), PCT(extent.End - 1, 1, 0))
     buffer ++ cov
   }
 
