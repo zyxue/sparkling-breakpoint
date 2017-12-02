@@ -85,4 +85,19 @@ class BreakpointSuite extends FunSuite {
       Array(PCT(3, 0, 15), PCT(10, 15, 0))
     )
   }
+
+  def checkConsolidatedCoverage(cov: Array[PCT], expected: Array[PCT]): Unit = {
+    val depthCutoff = 5
+    val cc = new BreakpointCalculator(depthCutoff)
+    assert(cc.consolidateCoverage(cov) === expected)
+  }
+
+  test("sum coverages at a single location") {
+    checkConsolidatedCoverage(
+      Array(PCT(-1, 0, 1), PCT(0, 1, 2), PCT(1, 2, 0)) ++ Array(PCT(-1, 0, 1), PCT(0, 1, 3), PCT(1, 3, 0)),
+      Array(PCT(-1, 0, 2), PCT(0, 2, 5), PCT(1, 5, 0))
+    )
+  }
+
+
 }
